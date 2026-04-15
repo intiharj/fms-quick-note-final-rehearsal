@@ -8,7 +8,8 @@ options:
 
 packages:
   FoxMountainKit:
-    path: ../../fms/shared/FoxMountainKit
+    url: https://github.com/intiharj/FoxMountainKit.git
+    branch: main
 
 targets:
   QuickNoteFinalRehearsal:
