@@ -16,6 +16,7 @@ jobs:
       APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
       APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
       APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
+      CERTIFICATES_GITHUB_TOKEN: ${{ secrets.CERTIFICATES_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +26,11 @@ jobs:
           test -n "$APP_STORE_CONNECT_API_KEY_KEY_ID"
           test -n "$APP_STORE_CONNECT_API_KEY_ISSUER_ID"
           test -n "$APP_STORE_CONNECT_API_KEY_KEY"
+          test -n "$CERTIFICATES_GITHUB_TOKEN"
+
+      - name: Configure git auth for certificates repo
+        run: |
+          git config --global url."https://x-access-token:${CERTIFICATES_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
       - name: Install tooling
         run: |
