@@ -1,0 +1,5 @@
+git_url("git@github.com:intiharj/certificates.git") # Replace with your signing repo
+storage_mode("git")
+type("appstore")
+username("john.intihar@gmail.com") # Replace if needed
+team_id("5FM8KU55B9")

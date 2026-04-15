@@ -1,0 +1,65 @@
+default_platform(:ios)
+
+require "json"
+
+platform :ios do
+  def load_release_contract!
+    path = File.expand_path("../fms-release.json", __dir__)
+    UI.user_error!("Missing release contract: #{path}") unless File.exist?(path)
+
+    data = JSON.parse(File.read(path))
+    required_keys = %w[app_name subtitle description release_notes]
+    missing = required_keys.select { |key| data[key].to_s.strip.empty? }
+    UI.user_error!("Release contract missing required keys: #{missing.join(', ')}") unless missing.empty?
+
+    UI.message("Loaded release contract for #{data['app_name']}")
+    data
+  end
+
+  def release_deliver_options(contract)
+    options = {
+      ipa: lane_context[SharedValues::IPA_OUTPUT_PATH],
+      app_identifier: CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier),
+      app_version: Actions.lane_context[SharedValues::VERSION_NUMBER],
+      submit_for_review: false,
+      force: true,
+      run_precheck_before_submit: false,
+      automatic_release: false,
+      skip_binary_upload: false,
+      skip_screenshots: true,
+      skip_metadata: false,
+      metadata: {
+        name: contract["app_name"],
+        subtitle: contract["subtitle"],
+        description: contract["description"],
+        keywords: Array(contract["keywords"]).join(","),
+        release_notes: {
+          "en-US" => contract["release_notes"]
+        }
+      }
+    }
+
+    options
+  end
+
+  desc "Resolve signing and build the app without upload"
+  lane :build_only do
+    load_release_contract!
+    match(type: "appstore", readonly: true)
+    build_app(scheme: "QuickNoteFinalRehearsal")
+  end
+
+  desc "Build and upload a template-derived app to TestFlight"
+  lane :beta do
+    contract = load_release_contract!
+    build_only
+    upload_to_testflight(changelog: contract["release_notes"])
+  end
+
+  desc "Build and submit a template-derived app to the App Store"
+  lane :release do
+    contract = load_release_contract!
+    build_only
+    deliver(**release_deliver_options(contract))
+  end
+end

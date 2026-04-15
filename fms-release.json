@@ -1,0 +1,16 @@
+{
+  "apple_id": "john.intihar@gmail.com",
+  "team_id": "5FM8KU55B9",
+  "match_git_url": "git@github.com:intiharj/certificates.git",
+  "subtitle": "Capture a note in seconds",
+  "description": "A disposable Fox Mountain app used for the cleanest repo-backed factory rehearsal so far.",
+  "keywords": [
+    "notes",
+    "productivity",
+    "writing",
+    "capture",
+    "fox mountain"
+  ],
+  "release_notes": "Initial TestFlight release",
+  "app_name": "Quick Note Final Rehearsal"
+}

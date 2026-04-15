@@ -1,0 +1,3 @@
+app_identifier("dev.foxmountain.quicknotefinalrehearsal") # Replace per spawned app
+apple_id("john.intihar@gmail.com") # Optional if using App Store Connect API key only
+team_id("5FM8KU55B9")

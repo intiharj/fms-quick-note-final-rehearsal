@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+      APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          test -n "$MATCH_PASSWORD"
+          test -n "$APP_STORE_CONNECT_API_KEY_KEY_ID"
+          test -n "$APP_STORE_CONNECT_API_KEY_ISSUER_ID"
+          test -n "$APP_STORE_CONNECT_API_KEY_KEY"
+
+      - name: Install tooling
+        run: |
+          brew install xcodegen
+          gem install fastlane
+
+      - name: Show tool versions
+        run: |
+          xcodebuild -version
+          xcodegen --version
+          fastlane --version
+
+      - name: Inspect release contract
+        run: |
+          test -f fms-release.json
+          cat fms-release.json
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build app before upload
+        run: fastlane build_only
+
+      - name: Deploy TestFlight
+        run: fastlane beta
