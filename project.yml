@@ -28,6 +28,8 @@ targets:
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.10"
+        DEVELOPMENT_TEAM: 5FM8KU55B9
+        CODE_SIGN_STYLE: Automatic
     info:
       path: Sources/QuickNoteFinalRehearsal/Info.plist
 
