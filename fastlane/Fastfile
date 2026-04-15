@@ -46,7 +46,12 @@ platform :ios do
   lane :build_only do
     load_release_contract!
     match(type: "appstore", readonly: true)
-    build_app(scheme: "QuickNoteFinalRehearsal")
+    build_app(
+      scheme: "QuickNoteFinalRehearsal",
+      verbose: true,
+      disable_xcpretty: true,
+      xcargs: "-showBuildTimingSummary"
+    )
   end
 
   desc "Build and upload a template-derived app to TestFlight"
