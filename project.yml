@@ -30,6 +30,11 @@ targets:
         SWIFT_VERSION: "5.10"
         DEVELOPMENT_TEAM: 5FM8KU55B9
         CODE_SIGN_STYLE: Automatic
+      configs:
+        Release:
+          CODE_SIGN_IDENTITY: Apple Distribution
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: match AppStore dev.foxmountain.quicknotefinalrehearsal
     info:
       path: Sources/QuickNoteFinalRehearsal/Info.plist
 
