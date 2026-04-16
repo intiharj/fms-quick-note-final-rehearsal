@@ -9,8 +9,18 @@ on:
 jobs:
   test:
     runs-on: macos-15
+    env:
+      CERTIFICATES_GITHUB_TOKEN: ${{ secrets.CERTIFICATES_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          test -n "$CERTIFICATES_GITHUB_TOKEN"
+
+      - name: Configure git auth for private package fetches
+        run: |
+          git config --global url."https://x-access-token:${CERTIFICATES_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
       - name: Install XcodeGen
         run: brew install xcodegen
