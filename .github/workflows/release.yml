@@ -12,11 +12,14 @@ jobs:
     env:
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
       APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
       APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
       CERTIFICATES_GITHUB_TOKEN: ${{ secrets.CERTIFICATES_GITHUB_TOKEN }}
+      BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+      BUILD_CERTIFICATE_PASSWORD: ${{ secrets.BUILD_CERTIFICATE_PASSWORD }}
+      BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 120
       FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 5
     steps:
@@ -24,11 +27,13 @@ jobs:
 
       - name: Validate required secrets
         run: |
-          test -n "$MATCH_PASSWORD"
           test -n "$APP_STORE_CONNECT_API_KEY_KEY_ID"
           test -n "$APP_STORE_CONNECT_API_KEY_ISSUER_ID"
           test -n "$APP_STORE_CONNECT_API_KEY_KEY"
           test -n "$CERTIFICATES_GITHUB_TOKEN"
+          test -n "$BUILD_CERTIFICATE_BASE64"
+          test -n "$BUILD_PROVISION_PROFILE_BASE64"
+          test -n "$KEYCHAIN_PASSWORD"
 
       - name: Configure git auth for private GitHub dependencies
         run: |
@@ -53,40 +58,28 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Install signing assets
-        run: fastlane install_signing
-
-      - name: Inspect keychain and provisioning state
+      - name: Import signing assets manually
         run: |
-          echo "== user keychains =="
-          security list-keychains -d user || true
-          echo "== default keychain =="
-          security default-keychain -d user || true
-          echo "== find identities (all) =="
-          security find-identity -v -p codesigning || true
-          echo "== find identities (login) =="
-          security find-identity -v -p codesigning "$HOME/Library/Keychains/login.keychain-db" || true
-          echo "== provisioning profiles via Xcode UserData =="
-          ls -la "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" || true
-          echo "== provisioning profiles via MobileDevice =="
-          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles" || true
-          echo "== keychain directory =="
-          ls -la "$HOME/Library/Keychains" || true
-
-      - name: Harden login keychain access for codesign
-        env:
-          KEYCHAIN_PASSWORD: ""
-        run: |
-          KEYCHAIN_PATH="$HOME/Library/Keychains/login.keychain-db"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
-          security set-keychain-settings -t 7200 -u "$KEYCHAIN_PATH" || true
-          security list-keychains -d user -s "$KEYCHAIN_PATH" || true
-          security default-keychain -s "$KEYCHAIN_PATH" || true
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
-          echo "== login keychain identities after hardening =="
+          CERT_PATH="$RUNNER_TEMP/dist.p12"
+          PP_PATH="$RUNNER_TEMP/quicknote.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$PP_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$BUILD_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" /Library/Keychains/System.keychain /Library/Keychains/SystemRootCertificates.keychain
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$PP_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/"
+          echo "== identities in temp keychain =="
           security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
-          echo "== login keychain info =="
-          security show-keychain-info "$KEYCHAIN_PATH" || true
+          echo "== active keychains =="
+          security list-keychains -d user || true
+          echo "== profiles =="
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles" || true
 
       - name: Archive app directly with xcodebuild
         env:
@@ -102,11 +95,13 @@ jobs:
             -archivePath "$PWD/build/archive/QuickNoteFinalRehearsal.xcarchive" \
             -derivedDataPath "$PWD/build/DerivedData" \
             -resultBundlePath "$PWD/build/archive/QuickNoteFinalRehearsal.xcresult" \
+            -showBuildTimingSummary \
             DEVELOPMENT_TEAM=5FM8KU55B9 \
             PRODUCT_BUNDLE_IDENTIFIER="$APP_BUNDLE_ID" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY='Apple Distribution' \
             PROVISIONING_PROFILE_SPECIFIER="$APP_PROFILE_NAME" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             archive | tee "$PWD/build/logs/xcodebuild-archive.log"
 
       - name: Inspect archive outputs
