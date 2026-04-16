@@ -1,5 +1,5 @@
 import SwiftUI
-import FoxMountainKit
+import FoxMountainKitCore
 
 @main
 struct QuickNoteFinalRehearsalApp: App {

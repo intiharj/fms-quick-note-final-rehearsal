@@ -1,5 +1,5 @@
 import SwiftUI
-import FoxMountainKit
+import FoxMountainKitCore
 
 struct ContentView: View {
     var body: some View {

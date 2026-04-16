@@ -7,8 +7,8 @@ options:
   xcodeVersion: "16.0"
 
 packages:
-  FoxMountainKit:
-    url: https://github.com/intiharj/FoxMountainKit.git
+  FoxMountainKitCore:
+    url: https://github.com/intiharj/FoxMountainKitCore.git
     branch: main
 
 targets:
@@ -20,7 +20,7 @@ targets:
       - path: Sources/Views
       - path: Resources
     dependencies:
-      - package: FoxMountainKit
+      - package: FoxMountainKitCore
     settings:
       base:
         PRODUCT_NAME: QuickNoteFinalRehearsal
