@@ -46,11 +46,27 @@ platform :ios do
   lane :build_only do
     load_release_contract!
     match(type: "appstore", readonly: true)
+
+    build_root = File.expand_path("../build", __dir__)
+    archive_path = File.join(build_root, "QuickNoteFinalRehearsal.xcarchive")
+    derived_data_path = File.join(build_root, "DerivedData")
+    buildlog_path = File.join(build_root, "logs")
+
+    FileUtils.mkdir_p(build_root)
+    FileUtils.mkdir_p(buildlog_path)
+
     build_app(
       scheme: "QuickNoteFinalRehearsal",
+      clean: true,
       verbose: true,
       disable_xcpretty: true,
-      xcargs: "-showBuildTimingSummary"
+      skip_package_ipa: true,
+      skip_package_pkg: true,
+      archive_path: archive_path,
+      derived_data_path: derived_data_path,
+      buildlog_path: buildlog_path,
+      result_bundle: true,
+      xcargs: "-showBuildTimingSummary -verbose"
     )
   end
 

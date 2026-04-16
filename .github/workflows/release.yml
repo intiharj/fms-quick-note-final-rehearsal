@@ -8,7 +8,7 @@ on:
 jobs:
   testflight:
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
@@ -55,6 +55,14 @@ jobs:
 
       - name: Build app before upload
         run: fastlane build_only
+
+      - name: Inspect archive outputs
+        if: always()
+        run: |
+          pwd
+          ls -la
+          find build -maxdepth 3 -type d | sort || true
+          find build -maxdepth 3 -type f | sort || true
 
       - name: Deploy TestFlight
         run: fastlane beta
