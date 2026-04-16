@@ -53,6 +53,9 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
+      - name: Install signing assets
+        run: fastlane install_signing
+
       - name: Archive app directly with xcodebuild
         env:
           APP_BUNDLE_ID: dev.foxmountain.quicknotefinalrehearsal

@@ -70,6 +70,11 @@ platform :ios do
     )
   end
 
+  desc "Install readonly match signing assets"
+  lane :install_signing do
+    match(type: "appstore", readonly: true)
+  end
+
   desc "Upload an already-archived template-derived app to TestFlight"
   lane :beta do
     contract = load_release_contract!
