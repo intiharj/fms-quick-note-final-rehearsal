@@ -56,6 +56,37 @@ jobs:
       - name: Install signing assets
         run: fastlane install_signing
 
+      - name: Inspect keychain and provisioning state
+        run: |
+          echo "== user keychains =="
+          security list-keychains -d user || true
+          echo "== default keychain =="
+          security default-keychain -d user || true
+          echo "== find identities =="
+          security find-identity -v -p codesigning || true
+          echo "== provisioning profiles =="
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles || true
+
+      - name: Harden keychain access for codesign
+        env:
+          KEYCHAIN_PASSWORD: fastlane
+        run: |
+          KEYCHAIN_PATH="$HOME/Library/Keychains/fastlane_tmp_keychain-db"
+          if [ -f "$KEYCHAIN_PATH" ]; then
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
+            security set-keychain-settings -t 7200 -u "$KEYCHAIN_PATH" || true
+            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"') || true
+            security default-keychain -s "$KEYCHAIN_PATH" || true
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
+            echo "== fastlane keychain identities =="
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
+            echo "== fastlane keychain info =="
+            security show-keychain-info "$KEYCHAIN_PATH" || true
+          else
+            echo "Expected fastlane keychain not found at $KEYCHAIN_PATH"
+            ls -la "$HOME/Library/Keychains" || true
+          fi
+
       - name: Archive app directly with xcodebuild
         env:
           APP_BUNDLE_ID: dev.foxmountain.quicknotefinalrehearsal
@@ -84,6 +115,12 @@ jobs:
           ls -la
           find build -maxdepth 4 -type d | sort || true
           find build -maxdepth 4 -type f | sort || true
+          echo "== process snapshot =="
+          ps aux | grep -E 'codesign|xcodebuild|fastlane|ruby|security' | grep -v grep || true
+          echo "== keychain snapshot =="
+          security list-keychains -d user || true
+          security default-keychain -d user || true
+          security find-identity -v -p codesigning || true
 
       - name: Export ipa from archive
         run: fastlane export_only
