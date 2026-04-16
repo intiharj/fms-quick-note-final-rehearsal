@@ -70,11 +70,19 @@ platform :ios do
     )
   end
 
-  desc "Build and upload a template-derived app to TestFlight"
+  desc "Upload an already-archived template-derived app to TestFlight"
   lane :beta do
     contract = load_release_contract!
-    build_only
-    upload_to_testflight(changelog: contract["release_notes"])
+    ipa_path = File.expand_path("../build/QuickNoteFinalRehearsal.ipa", __dir__)
+
+    unless File.exist?(ipa_path)
+      UI.user_error!("Missing ipa for upload: #{ipa_path}")
+    end
+
+    upload_to_testflight(
+      ipa: ipa_path,
+      changelog: contract["release_notes"]
+    )
   end
 
   desc "Build and submit a template-derived app to the App Store"
@@ -82,5 +90,23 @@ platform :ios do
     contract = load_release_contract!
     build_only
     deliver(**release_deliver_options(contract))
+  end
+
+  desc "Export an ipa from an existing archive"
+  lane :export_only do
+    archive_path = File.expand_path("../build/archive/QuickNoteFinalRehearsal.xcarchive", __dir__)
+    export_path = File.expand_path("../build", __dir__)
+
+    UI.user_error!("Missing archive for export: #{archive_path}") unless File.exist?(archive_path)
+
+    build_app(
+      skip_build_archive: true,
+      archive_path: archive_path,
+      export_method: "app-store",
+      output_directory: export_path,
+      output_name: "QuickNoteFinalRehearsal",
+      verbose: true,
+      disable_xcpretty: true
+    )
   end
 end
