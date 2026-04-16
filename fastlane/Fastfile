@@ -3,6 +3,17 @@ default_platform(:ios)
 require "json"
 
 platform :ios do
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_API_KEY_KEY"),
+      is_key_content_base64: false,
+      duration: 1200,
+      in_house: false
+    )
+  end
+
   def load_release_contract!
     path = File.expand_path("../fms-release.json", __dir__)
     UI.user_error!("Missing release contract: #{path}") unless File.exist?(path)
@@ -85,6 +96,7 @@ platform :ios do
     end
 
     upload_to_testflight(
+      api_key: asc_api_key,
       ipa: ipa_path,
       changelog: contract["release_notes"]
     )
@@ -94,7 +106,7 @@ platform :ios do
   lane :release do
     contract = load_release_contract!
     build_only
-    deliver(**release_deliver_options(contract))
+    deliver(api_key: asc_api_key, **release_deliver_options(contract))
   end
 
   desc "Export an ipa from an existing archive"
