@@ -62,30 +62,31 @@ jobs:
           security list-keychains -d user || true
           echo "== default keychain =="
           security default-keychain -d user || true
-          echo "== find identities =="
+          echo "== find identities (all) =="
           security find-identity -v -p codesigning || true
-          echo "== provisioning profiles =="
-          ls -la ~/Library/MobileDevice/Provisioning\ Profiles || true
+          echo "== find identities (login) =="
+          security find-identity -v -p codesigning "$HOME/Library/Keychains/login.keychain-db" || true
+          echo "== provisioning profiles via Xcode UserData =="
+          ls -la "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" || true
+          echo "== provisioning profiles via MobileDevice =="
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles" || true
+          echo "== keychain directory =="
+          ls -la "$HOME/Library/Keychains" || true
 
-      - name: Harden keychain access for codesign
+      - name: Harden login keychain access for codesign
         env:
-          KEYCHAIN_PASSWORD: fastlane
+          KEYCHAIN_PASSWORD: ""
         run: |
-          KEYCHAIN_PATH="$HOME/Library/Keychains/fastlane_tmp_keychain-db"
-          if [ -f "$KEYCHAIN_PATH" ]; then
-            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
-            security set-keychain-settings -t 7200 -u "$KEYCHAIN_PATH" || true
-            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"') || true
-            security default-keychain -s "$KEYCHAIN_PATH" || true
-            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
-            echo "== fastlane keychain identities =="
-            security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
-            echo "== fastlane keychain info =="
-            security show-keychain-info "$KEYCHAIN_PATH" || true
-          else
-            echo "Expected fastlane keychain not found at $KEYCHAIN_PATH"
-            ls -la "$HOME/Library/Keychains" || true
-          fi
+          KEYCHAIN_PATH="$HOME/Library/Keychains/login.keychain-db"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
+          security set-keychain-settings -t 7200 -u "$KEYCHAIN_PATH" || true
+          security list-keychains -d user -s "$KEYCHAIN_PATH" || true
+          security default-keychain -s "$KEYCHAIN_PATH" || true
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
+          echo "== login keychain identities after hardening =="
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
+          echo "== login keychain info =="
+          security show-keychain-info "$KEYCHAIN_PATH" || true
 
       - name: Archive app directly with xcodebuild
         env:
