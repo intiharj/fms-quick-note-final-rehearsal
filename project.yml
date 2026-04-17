@@ -37,6 +37,19 @@ targets:
           PROVISIONING_PROFILE_SPECIFIER: match AppStore dev.foxmountain.quicknotefinalrehearsal
     info:
       path: Sources/QuickNoteFinalRehearsal/Info.plist
+      properties:
+        CFBundleIconName: AppIcon
+        UILaunchStoryboardName: LaunchScreen
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
 
   QuickNoteFinalRehearsalTests:
     type: bundle.unit-test
